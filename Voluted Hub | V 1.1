@@ -1,0 +1,127 @@
+--- https://github.com/jensonhirst/Orion/blob/main/Documentation.md --- Link for documentation
+
+-- // these are my settings \ --
+
+
+-- // main settings \ -
+
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/jensonhirst/Orion/main/source')))()
+
+local Window = OrionLib:MakeWindow({Name = "Voluted Hub | V 1.0", HidePremium = false, SaveConfig = true, ConfigFolder = "OrionTest"})
+
+-- // Tabs Section \\ --
+
+-- Main Tab
+
+local MainTab = Window:MakeTab({
+	Name = "Main",
+	Icon = "rbxassetid://170940874",
+	PremiumOnly = false
+})
+
+
+
+
+local Section = MainTab:AddSection({
+	Name = "Main",
+})
+
+
+
+MainTab:AddSlider({
+	Name = "Walkspeed [500 Max]",
+	Min = 16,
+	Max = 500,
+	Default = 5,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "Ws",
+	Callback = function(Value)
+		game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+	end    
+})
+
+
+
+MainTab:AddSlider({
+	Name = "JumpPower [500 Max]",
+	Min = 16,
+	Max = 500,
+	Default = 5,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "JP",
+	Callback = function(Value)
+		game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+	end    
+})
+
+
+-- Lock Tab
+
+local LocksTab = Window:MakeTab({
+	Name = "Locks",
+	Icon = "rbxassetid://170940874",
+	PremiumOnly = false
+})
+
+
+
+
+local Section = LocksTab:AddSection({
+	Name = "Locks",
+})
+
+LocksTab:AddButton({  --- Hitbox Exploit Button
+    Name = "Hitbox Exploit [E]",
+    Callback = function()
+        print("button pressed")
+        
+        -- Your script to be executed when the button is pressed
+        getgenv().Script = {
+            ["Settings"] = {
+                ["ScriptMaker"] = "joog", -- // Please dont change this \
+                ["NotificationMode"] = {
+                    ["PlayerTargeted"] = false,
+                },
+                ["KOCheck"] = true,
+            },
+            ["HitboxExpander"] = {
+                ["Enabled"] = true,
+                ["Mode"] = "Keybind", -- // Keybind, FOV --
+                ["Keybind"] = "E", 
+                ["HitboxSize"] = {
+                    ["X"] = 7,
+                    ["Y"] = 7,
+                    ["Z"] = 7
+                },
+                ["HitboxExpanderFOV"] = {
+                    ["Visible"] = true,
+                    ["Radius"] = 30,
+                    ["Color"] = Color3.fromRGB(0, 255, 0),
+                    ["Thickness"] = 1,
+                    ["Transparency"] = 0.5,
+                },
+                ["HitboxExpanderBox"] = {
+                    ["Visible"] = true,
+                    ["Color"] = Color3.fromRGB(0, 255, 0),
+                    ["Transparency"] = 0.5,
+                }
+            }
+        }
+        
+        -- Load and execute the external script
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/joogisw/hitboxexpander/refs/heads/main/sourceobfuscated"))()
+    end    
+})
+
+-- // Tabs Section End \\ --    
+
+
+
+
+
+
+-- Main End [DONT TOUCH THIS] --
+
+OrionLib:Init()
