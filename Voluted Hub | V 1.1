@@ -212,7 +212,26 @@ local Slider = PlayerTab:CreateSlider({
         end
     end,
 })
-	
+
+
+--- tab 2
+
+local Player2Tab = Window:CreateTab("Auto Section", 279461711) -- Title, Image
+
+local Section = Player2Tab:CreateSection("Auto Tab")
+
+--- auto clicker
+local Toggle = Player2Tab:CreateToggle({
+	Name = "Full Auto Fishing [Soon]",
+	CurrentValue = false,
+	Flag = "FAF", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+	-- The function that takes place when the toggle is pressed
+	-- The variable (Value) is a boolean on whether the toggle is true or false
+	end,
+ })
+
+
 
  ---- dont touch
 
