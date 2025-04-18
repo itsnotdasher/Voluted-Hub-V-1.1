@@ -1,240 +1,231 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-local Window = Rayfield:CreateWindow({
-	Name = "Mal-Ware Hub | V1.0",
-	Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
-	LoadingTitle = "Mal-Ware Hub is loading...",
-	LoadingSubtitle = "by itsnotdasher",
-	Theme = "Ocean", -- Check https://docs.sirius.menu/rayfield/configuration/themes
- 
-	DisableRayfieldPrompts = false,
-	DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
- 
-	ConfigurationSaving = {
-	   Enabled = true,
-	   FolderName = nil, -- Create a custom folder for your hub/game
-	   FileName = "Big Hub"
-	},
- 
-	Discord = {
-	   Enabled = true, -- Prompt the user to join your Discord server if their executor supports it
-	   Invite = "https://discord.gg/GHU6bBE9", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ ABCD would be ABCD
-	   RememberJoins = true -- Set this to false to make them join the discord every time they load it up
-	},
- 
-	KeySystem = true, -- Set this to true to use our key system
-	KeySettings = {
-	   Title = "Mal-ware KeySystem - 2025",
-	   Subtitle = "Key System",
-	   Note = "Join Discord server for the key", -- Use this to tell the user how to get a key
-	   FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
-	   SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
-	   GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
-	   Key = {"Malware-Key2025-A6B6D8ANV8X9S7FG8392FJDNS8CHRNN29"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
-	}
- })
-
- --- key system ui
-
-
- --- Tabs
-
-
- local PlayerTab = Window:CreateTab("Main Section", 279461711) -- Title, Image
-
- local Section = PlayerTab:CreateSection("Main Tab")
-
---- Main tab - walkspeed slider
-
-local Slider = PlayerTab:CreateSlider({
-    Name = "Walkspeed Slider",  -- Change name to reflect the purpose
-    Range = {0, 500},           -- Set range for WalkSpeed (can be adjusted as needed)
-    Increment = 1,              -- Increment to modify WalkSpeed by 1 at a time
-    Suffix = "Speed",           -- This suffix can indicate the unit (speed in this case)
-    CurrentValue = 16,          -- Default value for the WalkSpeed, you can change this
-    Flag = "WalkspeedSlider",   -- Flag for configuration saving
-    Callback = function(Value)
-        -- Set the player's WalkSpeed based on the slider value
-        local player = game.Players.LocalPlayer
-        local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = Value  -- Set the WalkSpeed to the slider value
-        end
-    end,
-})
-
-
---- Main tab - Fly slider
-
-local flying = false  
-local bodyVelocity, bodyGyro
-local speed = 1  
-local maxSpeed = 10000  
-local activeInputs = {}
-
+-- Enhanced Camlock GUI with Sounds & Effects
+local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
 
-local function onInputBegan(input, gameProcessed)
-    if gameProcessed then return end
-    activeInputs[input.KeyCode] = true
+local localPlayer = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- Default settings
+local camLockEnabled = false
+local camLockKey = Enum.KeyCode.Q
+local smoothness = 0.1
+local targetPlayer = nil
+local predictionAmount = Vector3.new(0.05, 0, 0.05) -- Reduced prediction
+local legitMode = false  -- New variable to toggle between legit and unlegit modes
+
+-- GUI Creation
+local screenGui = Instance.new("ScreenGui", localPlayer:WaitForChild("PlayerGui"))
+screenGui.Name = "CamlockGUI"
+screenGui.ResetOnSpawn = false
+
+-- Sound Effects
+local clickSound = Instance.new("Sound", screenGui)
+clickSound.SoundId = "rbxassetid://12221967" -- UI Click
+clickSound.Volume = 1
+
+local toggleSound = Instance.new("Sound", screenGui)
+toggleSound.SoundId = "rbxassetid://413279809" -- Switch
+toggleSound.Volume = 1
+
+local sparkleSound = Instance.new("Sound", screenGui)
+sparkleSound.SoundId = "rbxassetid://9118823103" -- Sparkle
+sparkleSound.Volume = 1
+sparkleSound:Play()
+
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.Size = UDim2.new(0, 270, 0, 240) -- Adjusted height for new button
+mainFrame.Position = UDim2.new(0, 20, 0, 100)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.BackgroundTransparency = 0.1
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+local uiCorner = Instance.new("UICorner", mainFrame)
+uiCorner.CornerRadius = UDim.new(0, 12)
+
+local uiStroke = Instance.new("UIStroke", mainFrame)
+uiStroke.Thickness = 2
+uiStroke.Color = Color3.fromRGB(0, 200, 255)
+uiStroke.Transparency = 0.3
+
+local title = Instance.new("TextLabel", mainFrame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "CallMeDasher Lock"
+title.TextColor3 = Color3.fromRGB(0, 200, 255)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+
+local toggleButton = Instance.new("TextButton", mainFrame)
+toggleButton.Size = UDim2.new(1, -20, 0, 30)
+toggleButton.Position = UDim2.new(0, 10, 0, 40)
+toggleButton.Text = "Toggle Camlock (OFF)"
+toggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.Font = Enum.Font.Gotham
+toggleButton.TextSize = 16
+Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 6)
+
+local legitModeButton = Instance.new("TextButton", mainFrame) -- New button for Legit/Unlegit Mode
+legitModeButton.Size = UDim2.new(1, -20, 0, 30)
+legitModeButton.Position = UDim2.new(0, 10, 0, 180) -- Position below the key selector
+legitModeButton.Text = "Toggle Legit Mode (OFF)"
+legitModeButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+legitModeButton.TextColor3 = Color3.new(1,1,1)
+legitModeButton.Font = Enum.Font.Gotham
+legitModeButton.TextSize = 16
+Instance.new("UICorner", legitModeButton).CornerRadius = UDim.new(0, 6)
+
+local smoothLabel = Instance.new("TextLabel", mainFrame)
+smoothLabel.Position = UDim2.new(0, 10, 0, 80)
+smoothLabel.Size = UDim2.new(1, -20, 0, 20)
+smoothLabel.Text = "Smoothness: 0.1"
+smoothLabel.TextColor3 = Color3.new(1,1,1)
+smoothLabel.BackgroundTransparency = 1
+smoothLabel.Font = Enum.Font.Gotham
+smoothLabel.TextSize = 14
+
+local smoothSlider = Instance.new("TextButton", mainFrame)
+smoothSlider.Position = UDim2.new(0, 10, 0, 105)
+smoothSlider.Size = UDim2.new(1, -20, 0, 10)
+smoothSlider.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+smoothSlider.Text = ""
+smoothSlider.AutoButtonColor = false
+Instance.new("UICorner", smoothSlider).CornerRadius = UDim.new(0, 5)
+
+local fill = Instance.new("Frame", smoothSlider)
+fill.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+fill.Size = UDim2.new(smoothness, 0, 1, 0)
+fill.BorderSizePixel = 0
+Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 5)
+
+local keybindLabel = Instance.new("TextLabel", mainFrame)
+keybindLabel.Position = UDim2.new(0, 10, 0, 125)
+keybindLabel.Size = UDim2.new(1, -20, 0, 20)
+keybindLabel.Text = "Keybind: Q"
+keybindLabel.TextColor3 = Color3.new(1,1,1)
+keybindLabel.BackgroundTransparency = 1
+keybindLabel.Font = Enum.Font.Gotham
+keybindLabel.TextSize = 14
+
+local keySelector = Instance.new("TextButton", mainFrame)
+keySelector.Position = UDim2.new(0, 10, 0, 150)
+keySelector.Size = UDim2.new(1, -20, 0, 20)
+keySelector.Text = "Click to change key"
+keySelector.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
+keySelector.TextColor3 = Color3.new(1,1,1)
+keySelector.Font = Enum.Font.Gotham
+keySelector.TextSize = 14
+Instance.new("UICorner", keySelector).CornerRadius = UDim.new(0, 6)
+
+-- Closest Player Function
+local function getClosestPlayer()
+	local closest, shortestDistance = nil, math.huge
+	local myChar = localPlayer.Character
+	if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+	local myPos = myChar.HumanoidRootPart.Position
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			local dist = (player.Character.HumanoidRootPart.Position - myPos).Magnitude
+			if dist < shortestDistance then
+				shortestDistance = dist
+				closest = player
+			end
+		end
+	end
+	return closest
 end
 
-local function onInputEnded(input, gameProcessed)
-    activeInputs[input.KeyCode] = nil
+-- Toggle Camlock
+local function toggleCamlock()
+	toggleSound:Play()
+	camLockEnabled = not camLockEnabled
+	if camLockEnabled then
+		targetPlayer = getClosestPlayer()
+		toggleButton.Text = "Toggle Camlock (ON)"
+	else
+		targetPlayer = nil
+		toggleButton.Text = "Toggle Camlock (OFF)"
+	end
 end
 
-local function startFlying()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoid = character:FindFirstChild("Humanoid")
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    local camera = game.Workspace.CurrentCamera  
-
-    if not humanoid or not rootPart or flying then return end
-
-    flying = true
-    humanoid.PlatformStand = true  
-
-    bodyVelocity = Instance.new("BodyVelocity")
-    bodyGyro = Instance.new("BodyGyro")
-
-    bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)  
-    bodyVelocity.Velocity = Vector3.zero
-    bodyVelocity.Parent = rootPart
-
-    bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)  
-    bodyGyro.CFrame = rootPart.CFrame  
-    bodyGyro.Parent = rootPart
-
-    UserInputService.InputBegan:Connect(onInputBegan)
-    UserInputService.InputEnded:Connect(onInputEnded)
-
-    local verticalSpeed = 0  
-    local movementLoop
-    movementLoop = RunService.RenderStepped:Connect(function(deltaTime)
-        if not flying then
-            movementLoop:Disconnect()
-            return
-        end
-
-        local lookDirection = camera.CFrame.LookVector
-        local rightDirection = camera.CFrame.RightVector
-        local moveDirection = Vector3.zero
-
-        -- Horizontal movement (WASD keys)
-        if activeInputs[Enum.KeyCode.W] then moveDirection += lookDirection end
-        if activeInputs[Enum.KeyCode.S] then moveDirection -= lookDirection end
-        if activeInputs[Enum.KeyCode.A] then moveDirection -= rightDirection end
-        if activeInputs[Enum.KeyCode.D] then moveDirection += rightDirection end
-
-        -- 🎥 **Camera-Based Vertical Control**
-        local deadzone = 0.3  -- Increased deadzone to ignore small camera movements
-        local lookUpDown = lookDirection.Y  
-
-        if math.abs(lookUpDown) > deadzone then
-            local targetVerticalSpeed = lookUpDown * speed * 0.5
-            verticalSpeed = verticalSpeed + (targetVerticalSpeed - verticalSpeed) * (deltaTime * 4)
-        else
-            verticalSpeed = verticalSpeed * 0.85  -- Gradual stabilization when not looking up/down
-        end
-
-        -- Manual vertical control with Q/E keys
-        if activeInputs[Enum.KeyCode.Q] then
-            verticalSpeed = verticalSpeed + speed * 0.2  -- Move up when pressing Q
-        end
-        if activeInputs[Enum.KeyCode.E] then
-            verticalSpeed = verticalSpeed - speed * 0.2  -- Move down when pressing E
-        end
-
-        local targetVelocity = moveDirection.Unit * speed
-        if moveDirection.Magnitude == 0 then
-            targetVelocity = Vector3.zero
-        end
-
-        bodyVelocity.Velocity = Vector3.new(targetVelocity.X, verticalSpeed, targetVelocity.Z)
-        bodyGyro.CFrame = camera.CFrame  
-    end)
+-- Toggle Legit Mode
+local function toggleLegitMode()
+	legitMode = not legitMode
+	if legitMode then
+		legitModeButton.Text = "Toggle Legit Mode (ON)"
+		smoothness = 0.05
+		predictionAmount = Vector3.new(0.02, 0, 0.02)  -- Lower prediction in legit mode
+	else
+		legitModeButton.Text = "Toggle Legit Mode (OFF)"
+		smoothness = 0.1
+		predictionAmount = Vector3.new(0.1, 0, 0.1)  -- Higher prediction in unlegit mode
+	end
 end
 
-local function stopFlying()
-    if not flying then return end
-    flying = false
+toggleButton.MouseButton1Click:Connect(function()
+	clickSound:Play()
+	toggleCamlock()
+end)
 
-    local player = game.Players.LocalPlayer
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.PlatformStand = false
-        end
-    end
+legitModeButton.MouseButton1Click:Connect(function()
+	clickSound:Play()
+	toggleLegitMode()
+end)
 
-    if bodyVelocity then bodyVelocity:Destroy() end
-    if bodyGyro then bodyGyro:Destroy() end
+smoothSlider.MouseButton1Down:Connect(function()
+	clickSound:Play()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local mouse = UserInputService:GetMouseLocation().X
+		local sliderPos = smoothSlider.AbsolutePosition.X
+		local sliderSize = smoothSlider.AbsoluteSize.X
+		local percent = math.clamp((mouse - sliderPos) / sliderSize, 0, 1)
+		smoothness = math.clamp(percent, 0.01, 1)
+		fill.Size = UDim2.new(percent, 0, 1, 0)
+		smoothLabel.Text = ("Smoothness: %.2f"):format(smoothness)
+	end)
+	UserInputService.InputEnded:Wait()
+	if conn then conn:Disconnect() end
+end)
 
-    activeInputs = {}  
-end
+local waitingForKey = false
+keySelector.MouseButton1Click:Connect(function()
+	clickSound:Play()
+	keySelector.Text = "Press a key..."
+	waitingForKey = true
+end)
 
--- 🔹 **Slider to Control Fly Speed & Toggle Flight**
-local Slider = PlayerTab:CreateSlider({
-    Name = "Fly [Max Speed 500]",  
-    Range = {0, 500},  
-    Increment = 1,  
-    Suffix = " Speed",  
-    CurrentValue = 1,  
-    Flag = "FlySpeedSlider",  
-    Callback = function(Value)
-        speed = Value
-        if Value > 1 then
-            startFlying()  -- Enable flight if speed is above 1
-        else
-            stopFlying()   -- Disable flight if speed is 1 or lower
-        end
-    end,
-})
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if waitingForKey then
+		if input.KeyCode ~= Enum.KeyCode.Unknown then
+			camLockKey = input.KeyCode
+			keybindLabel.Text = "Keybind: " .. camLockKey.Name
+			keySelector.Text = "Click to change key"
+			waitingForKey = false
+			clickSound:Play()
+		end
+	else
+		if input.KeyCode == camLockKey then
+			toggleCamlock()
+		end
+	end
+end)
 
---- jump power slider
-
-local Slider = PlayerTab:CreateSlider({
-    Name = "JumpPower [Max Speed 500]",  -- Change name to reflect the purpose
-    Range = {0, 500},           -- Set range for WalkSpeed (can be adjusted as needed)
-    Increment = 1,              -- Increment to modify WalkSpeed by 1 at a time
-    Suffix = "Jump",           -- This suffix can indicate the unit (speed in this case)
-    CurrentValue = 16,          -- Default value for the WalkSpeed, you can change this
-    Flag = "JumpPowerSlider",   -- Flag for configuration saving
-    Callback = function(Value)
-        -- Set the player's WalkSpeed based on the slider value
-        local player = game.Players.LocalPlayer
-        local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.JumpPower = Value  -- Set the WalkSpeed to the slider value
-        end
-    end,
-})
-
-
---- tab 2
-
-local Player2Tab = Window:CreateTab("Auto Section", 279461711) -- Title, Image
-
-local Section = Player2Tab:CreateSection("Auto Tab")
-
---- auto clicker
-local Toggle = Player2Tab:CreateToggle({
-	Name = "Full Auto Fishing [Soon]",
-	CurrentValue = false,
-	Flag = "FAF", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-	Callback = function(Value)
-	-- The function that takes place when the toggle is pressed
-	-- The variable (Value) is a boolean on whether the toggle is true or false
-	end,
- })
-
-
-
- ---- dont touch
-
-Rayfield:LoadConfiguration()
-
---- dont touch
+-- Smooth Camlock Logic
+RunService.RenderStepped:Connect(function()
+	if camLockEnabled and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		local hrp = targetPlayer.Character.HumanoidRootPart
+		local predictedPosition = hrp.Position + (hrp.Velocity * predictionAmount)
+		local camPos = camera.CFrame.Position
+		local desiredLookVector = (predictedPosition - camPos).Unit
+		local currentLookVector = camera.CFrame.LookVector
+		local blended = currentLookVector:Lerp(desiredLookVector, smoothness)
+		camera.CFrame = CFrame.new(camPos, camPos + blended)
+	end
+end)
