@@ -3,7 +3,6 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local SoundService = game:GetService("SoundService")
 
 --// VARIABLES
 local localPlayer = Players.LocalPlayer
@@ -13,193 +12,269 @@ local camLockKey = Enum.KeyCode.Q
 local smoothness = 0.15
 local targetPlayer = nil
 local predictionAmount = Vector3.new(0.15, 0, 0.15)
-local currentMode = "Legit"
+local currentMode = "Legit" -- Default mode
 local waitingForKey = false
 local maxLockAngle = math.rad(30)
 
--- Mode presets
-local modePresets = {
-    Rage = {smoothness = 1.00, prediction = Vector3.new(0.3, 0, 0.3), lockAngle = math.rad(45)},
-    Legit = {smoothness = 0.15, prediction = Vector3.new(0.05, 0, 0.05), lockAngle = math.rad(20)},
-    Custom = {smoothness = 0.25, prediction = Vector3.new(0.15, 0, 0.15), lockAngle = math.rad(30)}
-}
-
 --// GUI SETUP
 local gui = Instance.new("ScreenGui")
-gui.Name = "SaltyHub"
+gui.Name = "SaltyCamlockPro"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.Parent = localPlayer:WaitForChild("PlayerGui")
 
--- Main Frame
+-- Main Container (Glass Morphism Effect)
 local frame = Instance.new("Frame")
 frame.AnchorPoint = Vector2.new(0.5, 0.5)
 frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-frame.Size = UDim2.new(0, 300, 0, 350)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-frame.BackgroundTransparency = 0.1
+frame.Size = UDim2.new(0, 300, 0, 340)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+frame.BackgroundTransparency = 0.2
 frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
 
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 10)
+corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = frame
 
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(255, 255, 255)
-stroke.Transparency = 0.2
-stroke.Thickness = 1
-stroke.Parent = frame
+local border = Instance.new("UIStroke")
+border.Color = Color3.fromRGB(100, 100, 100)
+border.Thickness = 1
+border.Transparency = 0.7
+border.Parent = frame
 
-local pad = Instance.new("UIPadding")
-pad.PaddingTop = UDim.new(0, 15)
-pad.PaddingLeft = UDim.new(0, 15)
-pad.PaddingRight = UDim.new(0, 15)
-pad.PaddingBottom = UDim.new(0, 15)
-pad.Parent = frame
+local padding = Instance.new("UIPadding")
+padding.PaddingTop = UDim.new(0, 15)
+padding.PaddingLeft = UDim.new(0, 15)
+padding.PaddingRight = UDim.new(0, 15)
+padding.PaddingBottom = UDim.new(0, 15)
+padding.Parent = frame
 
--- Title
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundTransparency = 1
+titleBar.Parent = frame
+
 local title = Instance.new("TextLabel")
-title.Text = "SALTY HUB"
-title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "SALTY CAMLOCK"
+title.Size = UDim2.new(1, 0, 1, 0)
+title.Font = Enum.Font.GothamSemibold
+title.TextSize = 16
+title.TextColor3 = Color3.fromRGB(240, 240, 240)
 title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.GothamBlack
-title.TextSize = 20
-title.TextXAlignment = Enum.TextXAlignment.Center
-title.Parent = frame
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
 
 -- Divider
 local divider = Instance.new("Frame")
 divider.Size = UDim2.new(1, 0, 0, 1)
 divider.Position = UDim2.new(0, 0, 0, 40)
-divider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+divider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 divider.BackgroundTransparency = 0.7
 divider.Parent = frame
 
--- Button Template (ALL BUTTONS WHITE TEXT ON BLACK BACKGROUND)
-local function createButton(text, yPos, height)
+-- Toggle Button
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1, 0, 0, 40)
+toggleBtn.Position = UDim2.new(0, 0, 0, 50)
+toggleBtn.Text = "CAMLOCK: OFF"
+toggleBtn.Font = Enum.Font.GothamMedium
+toggleBtn.TextSize = 14
+toggleBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+toggleBtn.AutoButtonColor = false
+toggleBtn.Parent = frame
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 8)
+toggleCorner.Parent = toggleBtn
+
+-- Mode Selection (Coming Soon)
+local modeLabel = Instance.new("TextLabel")
+modeLabel.Text = "MODE: LEGIT"
+modeLabel.Position = UDim2.new(0, 0, 0, 100)
+modeLabel.Size = UDim2.new(1, 0, 0, 20)
+modeLabel.Font = Enum.Font.Gotham
+modeLabel.TextSize = 13
+modeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+modeLabel.BackgroundTransparency = 1
+modeLabel.TextXAlignment = Enum.TextXAlignment.Left
+modeLabel.Parent = frame
+
+local modeContainer = Instance.new("Frame")
+modeContainer.Size = UDim2.new(1, 0, 0, 32)
+modeContainer.Position = UDim2.new(0, 0, 0, 125)
+modeContainer.BackgroundTransparency = 1
+modeContainer.Parent = frame
+
+local function createComingSoonButton(text, xPos)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, height or 32)
-    btn.Position = UDim2.new(0, 0, 0, yPos)
-    btn.Text = text
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 14
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255) -- WHITE TEXT
-    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40) -- DARK BACKGROUND
+    btn.Size = UDim2.new(0.32, 0, 1, 0)
+    btn.Position = UDim2.new(xPos, 0, 0, 0)
+    btn.Text = text.." 🔒"
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 13
+    btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
     btn.AutoButtonColor = false
-    btn.Parent = frame
+    btn.Parent = modeContainer
     
     local btnCorner = Instance.new("UICorner")
     btnCorner.CornerRadius = UDim.new(0, 6)
     btnCorner.Parent = btn
     
-    local btnStroke = Instance.new("UIStroke")
-    btnStroke.Color = Color3.fromRGB(255, 255, 255)
-    btnStroke.Transparency = 0.7
-    btnStroke.Parent = btn
+    -- Tooltip for coming soon
+    local tooltip = Instance.new("TextLabel")
+    tooltip.Text = "COMING SOON"
+    tooltip.Size = UDim2.new(1, 0, 0, 20)
+    tooltip.Position = UDim2.new(0, 0, -1, 0)
+    tooltip.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    tooltip.TextColor3 = Color3.fromRGB(200, 200, 200)
+    tooltip.Font = Enum.Font.Gotham
+    tooltip.TextSize = 12
+    tooltip.Visible = false
+    tooltip.Parent = btn
     
     btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+        tooltip.Visible = true
     end)
+    
     btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+        tooltip.Visible = false
     end)
     
     return btn
 end
 
--- Main Features
-local toggleBtn = createButton("TOGGLE CAMLOCK (OFF)", 50)
+local rageBtn = createComingSoonButton("RAGE", 0)
+local legitBtn = createComingSoonButton("LEGIT", 0.34)
+local customBtn = createComingSoonButton("CUSTOM", 0.68)
 
--- Mode Selection
-local modeLabel = Instance.new("TextLabel")
-modeLabel.Text = "MODE: " .. currentMode
-modeLabel.Position = UDim2.new(0, 0, 0, 90)
-modeLabel.Size = UDim2.new(1, 0, 0, 20)
-modeLabel.Font = Enum.Font.Gotham
-modeLabel.TextSize = 14
-modeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-modeLabel.BackgroundTransparency = 1
-modeLabel.TextXAlignment = Enum.TextXAlignment.Left
-modeLabel.Parent = frame
-
-local rageBtn = createButton("RAGE", 120, 28)
-local legitBtn = createButton("LEGIT", 155, 28)
-local customBtn = createButton("CUSTOM", 190, 28)
+-- Make the Legit button look active
+legitBtn.TextColor3 = Color3.fromRGB(80, 255, 80)
+legitBtn.BackgroundColor3 = Color3.fromRGB(50, 80, 60)
 
 -- Smoothness Slider
 local smoothLabel = Instance.new("TextLabel")
-smoothLabel.Text = "SMOOTHNESS: " .. string.format("%.2f", smoothness)
-smoothLabel.Position = UDim2.new(0, 0, 0, 230)
+smoothLabel.Text = "SMOOTHNESS: "..string.format("%.2f", smoothness)
+smoothLabel.Position = UDim2.new(0, 0, 0, 170)
 smoothLabel.Size = UDim2.new(1, 0, 0, 20)
 smoothLabel.Font = Enum.Font.Gotham
-smoothLabel.TextSize = 14
-smoothLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+smoothLabel.TextSize = 13
+smoothLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 smoothLabel.BackgroundTransparency = 1
 smoothLabel.TextXAlignment = Enum.TextXAlignment.Left
 smoothLabel.Parent = frame
 
-local smoothSlider = Instance.new("TextButton")
-smoothSlider.Position = UDim2.new(0, 0, 0, 255)
-smoothSlider.Size = UDim2.new(1, 0, 0, 10)
-smoothSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-smoothSlider.Text = ""
-smoothSlider.AutoButtonColor = false
-smoothSlider.Parent = frame
+local sliderContainer = Instance.new("Frame")
+sliderContainer.Size = UDim2.new(1, 0, 0, 24)
+sliderContainer.Position = UDim2.new(0, 0, 0, 195)
+sliderContainer.BackgroundTransparency = 1
+sliderContainer.Parent = frame
+
+local sliderTrack = Instance.new("Frame")
+sliderTrack.Size = UDim2.new(1, 0, 0, 4)
+sliderTrack.Position = UDim2.new(0, 0, 0.5, 0)
+sliderTrack.AnchorPoint = Vector2.new(0, 0.5)
+sliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+sliderTrack.Parent = sliderContainer
 
 local sliderCorner = Instance.new("UICorner")
-sliderCorner.CornerRadius = UDim.new(0, 5)
-sliderCorner.Parent = smoothSlider
+sliderCorner.CornerRadius = UDim.new(1, 0)
+sliderCorner.Parent = sliderTrack
 
-local fill = Instance.new("Frame")
-fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-fill.Size = UDim2.new(smoothness, 0, 1, 0)
-fill.BorderSizePixel = 0
-fill.Parent = smoothSlider
+local sliderFill = Instance.new("Frame")
+sliderFill.Size = UDim2.new(smoothness, 0, 1, 0)
+sliderFill.BackgroundColor3 = Color3.fromRGB(80, 255, 80) -- Green for Legit
+sliderFill.Parent = sliderTrack
 
-local fillCorner = Instance.new("UICorner")
-fillCorner.CornerRadius = UDim.new(0, 5)
-fillCorner.Parent = fill
+local sliderCorner2 = Instance.new("UICorner")
+sliderCorner2.CornerRadius = UDim.new(1, 0)
+sliderCorner2.Parent = sliderFill
 
--- Keybind
+local sliderButton = Instance.new("TextButton")
+sliderButton.Size = UDim2.new(0, 16, 0, 16)
+sliderButton.Position = UDim2.new(smoothness, -8, 0.5, -8)
+sliderButton.AnchorPoint = Vector2.new(0, 0.5)
+sliderButton.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+sliderButton.Text = ""
+sliderButton.AutoButtonColor = false
+sliderButton.ZIndex = 2
+sliderButton.Parent = sliderContainer
+
+local sliderCorner3 = Instance.new("UICorner")
+sliderCorner3.CornerRadius = UDim.new(1, 0)
+sliderCorner3.Parent = sliderButton
+
+-- Keybind Control
 local keybindLabel = Instance.new("TextLabel")
 keybindLabel.Text = "KEYBIND: Q"
-keybindLabel.Position = UDim2.new(0, 0, 0, 275)
+keybindLabel.Position = UDim2.new(0, 0, 0, 230)
 keybindLabel.Size = UDim2.new(1, 0, 0, 20)
 keybindLabel.Font = Enum.Font.Gotham
-keybindLabel.TextSize = 14
-keybindLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+keybindLabel.TextSize = 13
+keybindLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 keybindLabel.BackgroundTransparency = 1
 keybindLabel.TextXAlignment = Enum.TextXAlignment.Left
 keybindLabel.Parent = frame
 
-local keyBtn = createButton("CHANGE KEY", 300, 28)
+local keyBtn = Instance.new("TextButton")
+keyBtn.Size = UDim2.new(1, 0, 0, 36)
+keyBtn.Position = UDim2.new(0, 0, 0, 255)
+keyBtn.Text = "CHANGE KEYBIND"
+keyBtn.Font = Enum.Font.GothamMedium
+keyBtn.TextSize = 14
+keyBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+keyBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+keyBtn.AutoButtonColor = false
+keyBtn.Parent = frame
 
--- Status
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Text = "STATUS: INACTIVE"
-statusLabel.Position = UDim2.new(0, 0, 0, 340)
-statusLabel.Size = UDim2.new(1, 0, 0, 20)
-statusLabel.Font = Enum.Font.GothamBold
-statusLabel.TextSize = 14
-statusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Parent = frame
+local keyBtnCorner = Instance.new("UICorner")
+keyBtnCorner.CornerRadius = UDim.new(0, 8)
+keyBtnCorner.Parent = keyBtn
+
+-- Status Indicator
+local statusContainer = Instance.new("Frame")
+statusContainer.Size = UDim2.new(1, 0, 0, 24)
+statusContainer.Position = UDim2.new(0, 0, 0, 300)
+statusContainer.BackgroundTransparency = 1
+statusContainer.Parent = frame
+
+local statusDot = Instance.new("Frame")
+statusDot.Size = UDim2.new(0, 10, 0, 10)
+statusDot.Position = UDim2.new(0, 0, 0.5, -5)
+statusDot.AnchorPoint = Vector2.new(0, 0.5)
+statusDot.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+statusDot.Parent = statusContainer
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(1, 0)
+statusCorner.Parent = statusDot
+
+local statusText = Instance.new("TextLabel")
+statusText.Text = "INACTIVE"
+statusText.Size = UDim2.new(1, -20, 1, 0)
+statusText.Position = UDim2.new(0, 20, 0, 0)
+statusText.Font = Enum.Font.Gotham
+statusText.TextSize = 13
+statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusText.BackgroundTransparency = 1
+statusText.TextXAlignment = Enum.TextXAlignment.Left
+statusText.Parent = statusContainer
 
 -- Highlight
 local highlight = Instance.new("Highlight")
 highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-highlight.FillColor = Color3.fromRGB(255, 255, 255)
+highlight.FillColor = Color3.fromRGB(100, 150, 255)
 highlight.OutlineColor = Color3.new(0, 0, 0)
 highlight.FillTransparency = 0.8
 highlight.OutlineTransparency = 0.3
 highlight.Parent = gui
 
--- Functions
-local function getPlayerInView()
+-- FUNCTIONS
+local function getClosestPlayerToCrosshair()
     local myChar = localPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
     
@@ -207,7 +282,7 @@ local function getPlayerInView()
     local cameraLook = camera.CFrame.LookVector
     
     local closestPlayer = nil
-    local smallestAngle = modePresets[currentMode].lockAngle
+    local smallestAngle = maxLockAngle
     
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= localPlayer and player.Character then
@@ -229,15 +304,15 @@ end
 
 local function updateStatus()
     if not camLockEnabled then
-        statusLabel.Text = "STATUS: INACTIVE"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+        statusDot.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        statusText.Text = "INACTIVE"
     else
         if targetPlayer then
-            statusLabel.Text = "LOCKED: " .. string.sub(targetPlayer.Name, 1, 12)
-            statusLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+            statusDot.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+            statusText.Text = "LOCKED: "..string.sub(targetPlayer.Name, 1, 12)
         else
-            statusLabel.Text = "STATUS: NO TARGET"
-            statusLabel.TextColor3 = Color3.fromRGB(255, 255, 50)
+            statusDot.BackgroundColor3 = Color3.fromRGB(255, 255, 50)
+            statusText.Text = "NO TARGET"
         end
     end
 end
@@ -246,51 +321,20 @@ local function toggleCamlock()
     camLockEnabled = not camLockEnabled
     
     if camLockEnabled then
-        targetPlayer = getPlayerInView()
+        targetPlayer = getClosestPlayerToCrosshair()
         highlight.Adornee = targetPlayer and targetPlayer.Character or nil
+        toggleBtn.Text = "CAMLOCK: ON"
     else
         targetPlayer = nil
         highlight.Adornee = nil
+        toggleBtn.Text = "CAMLOCK: OFF"
     end
     
-    toggleBtn.Text = "TOGGLE CAMLOCK (" .. (camLockEnabled and "ON" or "OFF") .. ")"
     updateStatus()
 end
 
-local function setMode(mode)
-    currentMode = mode
-    modeLabel.Text = "MODE: " .. mode
-    
-    if mode ~= "Custom" then
-        smoothness = modePresets[mode].smoothness
-        fill.Size = UDim2.new(smoothness, 0, 1, 0)
-        smoothLabel.Text = string.format("SMOOTHNESS: %.2f", smoothness)
-    end
-    
-    predictionAmount = modePresets[mode].prediction
-    maxLockAngle = modePresets[mode].lockAngle
-    
-    if camLockEnabled then
-        targetPlayer = getPlayerInView()
-        highlight.Adornee = targetPlayer and targetPlayer.Character or nil
-        updateStatus()
-    end
-end
-
--- Connections
+-- CONNECTIONS
 toggleBtn.MouseButton1Click:Connect(toggleCamlock)
-
-rageBtn.MouseButton1Click:Connect(function()
-    setMode("Rage")
-end)
-
-legitBtn.MouseButton1Click:Connect(function()
-    setMode("Legit")
-end)
-
-customBtn.MouseButton1Click:Connect(function()
-    setMode("Custom")
-end)
 
 keyBtn.MouseButton1Click:Connect(function()
     waitingForKey = true
@@ -302,52 +346,75 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     
     if waitingForKey and input.KeyCode ~= Enum.KeyCode.Unknown then
         camLockKey = input.KeyCode
-        keybindLabel.Text = "KEYBIND: " .. camLockKey.Name
-        keyBtn.Text = "CHANGE KEY"
+        keybindLabel.Text = "KEYBIND: "..camLockKey.Name
+        keyBtn.Text = "CHANGE KEYBIND"
         waitingForKey = false
     elseif input.KeyCode == camLockKey then
         toggleCamlock()
     end
 end)
 
-smoothSlider.MouseButton1Down:Connect(function()
-    local conn
-    conn = RunService.RenderStepped:Connect(function()
-        local mouse = UserInputService:GetMouseLocation().X
-        local sliderPos = smoothSlider.AbsolutePosition.X
-        local sliderSize = smoothSlider.AbsoluteSize.X
-        local percent = math.clamp((mouse - sliderPos) / sliderSize, 0, 1)
-        
-        smoothness = math.clamp(percent, 0.01, 1)
-        fill.Size = UDim2.new(smoothness, 0, 1, 0)
-        smoothLabel.Text = string.format("SMOOTHNESS: %.2f", smoothness)
-        
-        if currentMode == "Custom" then
-            modePresets.Custom.smoothness = smoothness
-        end
-    end)
-    
-    UserInputService.InputEnded:Wait()
-    conn:Disconnect()
+-- Smoothness slider
+local sliderDragging = false
+sliderButton.MouseButton1Down:Connect(function()
+    sliderDragging = true
 end)
 
--- Main loop
-RunService.RenderStepped:Connect(function()
-    if camLockEnabled then
-        targetPlayer = getPlayerInView()
-        highlight.Adornee = targetPlayer and targetPlayer.Character or nil
-        updateStatus()
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        sliderDragging = false
+    end
+end)
+
+-- Main camlock loop
+local renderSteppedConnection
+renderSteppedConnection = RunService.RenderStepped:Connect(function(deltaTime)
+    -- Handle slider dragging
+    if sliderDragging then
+        local mouse = UserInputService:GetMouseLocation().X
+        local sliderPos = sliderTrack.AbsolutePosition.X
+        local sliderSize = sliderTrack.AbsoluteSize.X
+        local percent = math.clamp((mouse - sliderPos) / sliderSize, 0, 1)
         
+        smoothness = percent
+        sliderFill.Size = UDim2.new(smoothness, 0, 1, 0)
+        sliderButton.Position = UDim2.new(smoothness, -8, 0.5, -8)
+        smoothLabel.Text = "SMOOTHNESS: "..string.format("%.2f", smoothness)
+    end
+    
+    -- Handle camlock
+    if camLockEnabled then
+        -- Get new target if needed
+        if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            targetPlayer = getClosestPlayerToCrosshair()
+            highlight.Adornee = targetPlayer and targetPlayer.Character or nil
+            updateStatus()
+        end
+        
+        -- Smooth camera movement
         if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local hrp = targetPlayer.Character.HumanoidRootPart
-            local predicted = hrp.Position + (hrp.Velocity * predictionAmount)
+            local predictedPos = hrp.Position + (hrp.Velocity * predictionAmount)
             local camPos = camera.CFrame.Position
-            local lookDir = (predicted - camPos).Unit
-            local blend = camera.CFrame.LookVector:Lerp(lookDir, smoothness)
-            camera.CFrame = CFrame.new(camPos, camPos + blend)
+            local lookDir = (predictedPos - camPos).Unit
+            
+            -- Smooth interpolation
+            local currentLook = camera.CFrame.LookVector
+            local newLook = currentLook:Lerp(lookDir, smoothness * deltaTime * 60)
+            
+            camera.CFrame = CFrame.new(camPos, camPos + newLook)
+        else
+            -- Target became invalid
+            targetPlayer = nil
+            highlight.Adornee = nil
+            updateStatus()
         end
     end
 end)
 
--- Initialize
-setMode("Legit")
+-- Cleanup
+gui.Destroying:Connect(function()
+    if renderSteppedConnection then
+        renderSteppedConnection:Disconnect()
+    end
+end)
