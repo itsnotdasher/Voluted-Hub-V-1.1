@@ -9,12 +9,13 @@ local localPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 local camLockEnabled = false
 local camLockKey = Enum.KeyCode.Q
-local smoothness = 0.15
+local smoothness = 0.20
 local targetPlayer = nil
 local predictionAmount = Vector3.new(0.15, 0, 0.15)
-local currentMode = "Legit" -- Default mode
+local currentMode = "Custom"
 local waitingForKey = false
 local maxLockAngle = math.rad(30)
+local predictionEnabled = true
 
 --// GUI SETUP
 local gui = Instance.new("ScreenGui")
@@ -27,7 +28,7 @@ gui.Parent = localPlayer:WaitForChild("PlayerGui")
 local frame = Instance.new("Frame")
 frame.AnchorPoint = Vector2.new(0.5, 0.5)
 frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-frame.Size = UDim2.new(0, 300, 0, 340)
+frame.Size = UDim2.new(0, 300, 0, 400) -- Increased height for new features
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 frame.BackgroundTransparency = 0.2
 frame.Active = true
@@ -58,7 +59,7 @@ titleBar.BackgroundTransparency = 1
 titleBar.Parent = frame
 
 local title = Instance.new("TextLabel")
-title.Text = "SALTY CAMLOCK"
+title.Text = "SALTYNESS HUB  [1.0V]"
 title.Size = UDim2.new(1, 0, 1, 0)
 title.Font = Enum.Font.GothamSemibold
 title.TextSize = 16
@@ -91,9 +92,9 @@ local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 8)
 toggleCorner.Parent = toggleBtn
 
--- Mode Selection (Coming Soon)
+-- Mode Label
 local modeLabel = Instance.new("TextLabel")
-modeLabel.Text = "MODE: LEGIT"
+modeLabel.Text = "MODE: Custom"
 modeLabel.Position = UDim2.new(0, 0, 0, 100)
 modeLabel.Size = UDim2.new(1, 0, 0, 20)
 modeLabel.Font = Enum.Font.Gotham
@@ -103,63 +104,10 @@ modeLabel.BackgroundTransparency = 1
 modeLabel.TextXAlignment = Enum.TextXAlignment.Left
 modeLabel.Parent = frame
 
-local modeContainer = Instance.new("Frame")
-modeContainer.Size = UDim2.new(1, 0, 0, 32)
-modeContainer.Position = UDim2.new(0, 0, 0, 125)
-modeContainer.BackgroundTransparency = 1
-modeContainer.Parent = frame
-
-local function createComingSoonButton(text, xPos)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.32, 0, 1, 0)
-    btn.Position = UDim2.new(xPos, 0, 0, 0)
-    btn.Text = text.." 🔒"
-    btn.Font = Enum.Font.GothamMedium
-    btn.TextSize = 13
-    btn.TextColor3 = Color3.fromRGB(150, 150, 150)
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    btn.AutoButtonColor = false
-    btn.Parent = modeContainer
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 6)
-    btnCorner.Parent = btn
-    
-    -- Tooltip for coming soon
-    local tooltip = Instance.new("TextLabel")
-    tooltip.Text = "COMING SOON"
-    tooltip.Size = UDim2.new(1, 0, 0, 20)
-    tooltip.Position = UDim2.new(0, 0, -1, 0)
-    tooltip.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    tooltip.TextColor3 = Color3.fromRGB(200, 200, 200)
-    tooltip.Font = Enum.Font.Gotham
-    tooltip.TextSize = 12
-    tooltip.Visible = false
-    tooltip.Parent = btn
-    
-    btn.MouseEnter:Connect(function()
-        tooltip.Visible = true
-    end)
-    
-    btn.MouseLeave:Connect(function()
-        tooltip.Visible = false
-    end)
-    
-    return btn
-end
-
-local rageBtn = createComingSoonButton("RAGE", 0)
-local legitBtn = createComingSoonButton("LEGIT", 0.34)
-local customBtn = createComingSoonButton("CUSTOM", 0.68)
-
--- Make the Legit button look active
-legitBtn.TextColor3 = Color3.fromRGB(80, 255, 80)
-legitBtn.BackgroundColor3 = Color3.fromRGB(50, 80, 60)
-
 -- Smoothness Slider
 local smoothLabel = Instance.new("TextLabel")
 smoothLabel.Text = "SMOOTHNESS: "..string.format("%.2f", smoothness)
-smoothLabel.Position = UDim2.new(0, 0, 0, 170)
+smoothLabel.Position = UDim2.new(0, 0, 0, 130)
 smoothLabel.Size = UDim2.new(1, 0, 0, 20)
 smoothLabel.Font = Enum.Font.Gotham
 smoothLabel.TextSize = 13
@@ -170,7 +118,7 @@ smoothLabel.Parent = frame
 
 local sliderContainer = Instance.new("Frame")
 sliderContainer.Size = UDim2.new(1, 0, 0, 24)
-sliderContainer.Position = UDim2.new(0, 0, 0, 195)
+sliderContainer.Position = UDim2.new(0, 0, 0, 155)
 sliderContainer.BackgroundTransparency = 1
 sliderContainer.Parent = frame
 
@@ -187,7 +135,7 @@ sliderCorner.Parent = sliderTrack
 
 local sliderFill = Instance.new("Frame")
 sliderFill.Size = UDim2.new(smoothness, 0, 1, 0)
-sliderFill.BackgroundColor3 = Color3.fromRGB(80, 255, 80) -- Green for Legit
+sliderFill.BackgroundColor3 = Color3.fromRGB(80, 180, 255) -- Blue for Custom
 sliderFill.Parent = sliderTrack
 
 local sliderCorner2 = Instance.new("UICorner")
@@ -208,10 +156,84 @@ local sliderCorner3 = Instance.new("UICorner")
 sliderCorner3.CornerRadius = UDim.new(1, 0)
 sliderCorner3.Parent = sliderButton
 
+-- Prediction Slider
+local predictionLabel = Instance.new("TextLabel")
+predictionLabel.Text = "PREDICTION: "..string.format("%.2f", predictionAmount.X)
+predictionLabel.Position = UDim2.new(0, 0, 0, 190)
+predictionLabel.Size = UDim2.new(1, 0, 0, 20)
+predictionLabel.Font = Enum.Font.Gotham
+predictionLabel.TextSize = 13
+predictionLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+predictionLabel.BackgroundTransparency = 1
+predictionLabel.TextXAlignment = Enum.TextXAlignment.Left
+predictionLabel.Parent = frame
+
+local predictionContainer = Instance.new("Frame")
+predictionContainer.Size = UDim2.new(1, 0, 0, 24)
+predictionContainer.Position = UDim2.new(0, 0, 0, 215)
+predictionContainer.BackgroundTransparency = 1
+predictionContainer.Parent = frame
+
+local predictionTrack = Instance.new("Frame")
+predictionTrack.Size = UDim2.new(1, 0, 0, 4)
+predictionTrack.Position = UDim2.new(0, 0, 0.5, 0)
+predictionTrack.AnchorPoint = Vector2.new(0, 0.5)
+predictionTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+predictionTrack.Parent = predictionContainer
+
+local predictionCorner = Instance.new("UICorner")
+predictionCorner.CornerRadius = UDim.new(1, 0)
+predictionCorner.Parent = predictionTrack
+
+local predictionFill = Instance.new("Frame")
+predictionFill.Size = UDim2.new(predictionAmount.X / 0.5, 0, 1, 0) -- Max prediction 0.5
+predictionFill.BackgroundColor3 = Color3.fromRGB(255, 180, 80) -- Orange for prediction
+predictionFill.Parent = predictionTrack
+
+local predictionCorner2 = Instance.new("UICorner")
+predictionCorner2.CornerRadius = UDim.new(1, 0)
+predictionCorner2.Parent = predictionFill
+
+local predictionButton = Instance.new("TextButton")
+predictionButton.Size = UDim2.new(0, 16, 0, 16)
+predictionButton.Position = UDim2.new(predictionAmount.X / 0.5, -8, 0.5, -8)
+predictionButton.AnchorPoint = Vector2.new(0, 0.5)
+predictionButton.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+predictionButton.Text = ""
+predictionButton.AutoButtonColor = false
+predictionButton.ZIndex = 2
+predictionButton.Parent = predictionContainer
+
+local predictionCorner3 = Instance.new("UICorner")
+predictionCorner3.CornerRadius = UDim.new(1, 0)
+predictionCorner3.Parent = predictionButton
+
+-- Prediction Toggle
+local predictionToggle = Instance.new("TextButton")
+predictionToggle.Size = UDim2.new(1, 0, 0, 36)
+predictionToggle.Position = UDim2.new(0, 0, 0, 250)
+predictionToggle.Text = "PREDICTION: ON"
+predictionToggle.Font = Enum.Font.GothamMedium
+predictionToggle.TextSize = 14
+predictionToggle.TextColor3 = Color3.fromRGB(240, 240, 240)
+predictionToggle.BackgroundColor3 = Color3.fromRGB(50, 80, 60)
+predictionToggle.AutoButtonColor = false
+predictionToggle.Parent = frame
+
+local predictionToggleCorner = Instance.new("UICorner")
+predictionToggleCorner.CornerRadius = UDim.new(0, 8)
+predictionToggleCorner.Parent = predictionToggle
+
+predictionToggle.MouseButton1Click:Connect(function()
+    predictionEnabled = not predictionEnabled
+    predictionToggle.Text = "PREDICTION: "..(predictionEnabled and "ON" or "OFF")
+    predictionToggle.BackgroundColor3 = predictionEnabled and Color3.fromRGB(50, 80, 60) or Color3.fromRGB(80, 50, 50)
+end)
+
 -- Keybind Control
 local keybindLabel = Instance.new("TextLabel")
 keybindLabel.Text = "KEYBIND: Q"
-keybindLabel.Position = UDim2.new(0, 0, 0, 230)
+keybindLabel.Position = UDim2.new(0, 0, 0, 295)
 keybindLabel.Size = UDim2.new(1, 0, 0, 20)
 keybindLabel.Font = Enum.Font.Gotham
 keybindLabel.TextSize = 13
@@ -222,7 +244,7 @@ keybindLabel.Parent = frame
 
 local keyBtn = Instance.new("TextButton")
 keyBtn.Size = UDim2.new(1, 0, 0, 36)
-keyBtn.Position = UDim2.new(0, 0, 0, 255)
+keyBtn.Position = UDim2.new(0, 0, 0, 320)
 keyBtn.Text = "CHANGE KEYBIND"
 keyBtn.Font = Enum.Font.GothamMedium
 keyBtn.TextSize = 14
@@ -238,7 +260,7 @@ keyBtnCorner.Parent = keyBtn
 -- Status Indicator
 local statusContainer = Instance.new("Frame")
 statusContainer.Size = UDim2.new(1, 0, 0, 24)
-statusContainer.Position = UDim2.new(0, 0, 0, 300)
+statusContainer.Position = UDim2.new(0, 0, 0, 365)
 statusContainer.BackgroundTransparency = 1
 statusContainer.Parent = frame
 
@@ -360,9 +382,16 @@ sliderButton.MouseButton1Down:Connect(function()
     sliderDragging = true
 end)
 
+-- Prediction slider
+local predictionDragging = false
+predictionButton.MouseButton1Down:Connect(function()
+    predictionDragging = true
+end)
+
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         sliderDragging = false
+        predictionDragging = false
     end
 end)
 
@@ -382,6 +411,19 @@ renderSteppedConnection = RunService.RenderStepped:Connect(function(deltaTime)
         smoothLabel.Text = "SMOOTHNESS: "..string.format("%.2f", smoothness)
     end
     
+    -- Handle prediction slider dragging
+    if predictionDragging then
+        local mouse = UserInputService:GetMouseLocation().X
+        local sliderPos = predictionTrack.AbsolutePosition.X
+        local sliderSize = predictionTrack.AbsoluteSize.X
+        local percent = math.clamp((mouse - sliderPos) / sliderSize, 0, 1)
+        
+        predictionAmount = Vector3.new(percent * 0.5, 0, percent * 0.5) -- Max prediction 0.5
+        predictionFill.Size = UDim2.new(percent, 0, 1, 0)
+        predictionButton.Position = UDim2.new(percent, -8, 0.5, -8)
+        predictionLabel.Text = "PREDICTION: "..string.format("%.2f", predictionAmount.X)
+    end
+    
     -- Handle camlock
     if camLockEnabled then
         -- Get new target if needed
@@ -394,7 +436,7 @@ renderSteppedConnection = RunService.RenderStepped:Connect(function(deltaTime)
         -- Smooth camera movement
         if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local hrp = targetPlayer.Character.HumanoidRootPart
-            local predictedPos = hrp.Position + (hrp.Velocity * predictionAmount)
+            local predictedPos = predictionEnabled and (hrp.Position + (hrp.Velocity * predictionAmount)) or hrp.Position
             local camPos = camera.CFrame.Position
             local lookDir = (predictedPos - camPos).Unit
             
