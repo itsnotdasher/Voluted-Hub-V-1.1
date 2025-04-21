@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
 
 --// VARIABLES
 local localPlayer = Players.LocalPlayer
@@ -16,6 +17,8 @@ local currentMode = "Custom"
 local waitingForKey = false
 local maxLockAngle = math.rad(30)
 local predictionEnabled = true
+local guiVisible = true
+local hideGuiKey = Enum.KeyCode.RightShift
 
 --// GUI SETUP
 local gui = Instance.new("ScreenGui")
@@ -24,11 +27,10 @@ gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.Parent = localPlayer:WaitForChild("PlayerGui")
 
--- Main Container (Glass Morphism Effect)
 local frame = Instance.new("Frame")
 frame.AnchorPoint = Vector2.new(0.5, 0.5)
 frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-frame.Size = UDim2.new(0, 300, 0, 400) -- Increased height for new features
+frame.Size = UDim2.new(0, 300, 0, 400)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 frame.BackgroundTransparency = 0.2
 frame.Active = true
@@ -59,7 +61,7 @@ titleBar.BackgroundTransparency = 1
 titleBar.Parent = frame
 
 local title = Instance.new("TextLabel")
-title.Text = "SALTYNESS HUB  [1.0V]"
+title.Text = "SALTYNESS HUB [1.0V]"
 title.Size = UDim2.new(1, 0, 1, 0)
 title.Font = Enum.Font.GothamSemibold
 title.TextSize = 16
@@ -135,7 +137,7 @@ sliderCorner.Parent = sliderTrack
 
 local sliderFill = Instance.new("Frame")
 sliderFill.Size = UDim2.new(smoothness, 0, 1, 0)
-sliderFill.BackgroundColor3 = Color3.fromRGB(80, 180, 255) -- Blue for Custom
+sliderFill.BackgroundColor3 = Color3.fromRGB(80, 180, 255)
 sliderFill.Parent = sliderTrack
 
 local sliderCorner2 = Instance.new("UICorner")
@@ -186,8 +188,8 @@ predictionCorner.CornerRadius = UDim.new(1, 0)
 predictionCorner.Parent = predictionTrack
 
 local predictionFill = Instance.new("Frame")
-predictionFill.Size = UDim2.new(predictionAmount.X / 0.5, 0, 1, 0) -- Max prediction 0.5
-predictionFill.BackgroundColor3 = Color3.fromRGB(255, 180, 80) -- Orange for prediction
+predictionFill.Size = UDim2.new(predictionAmount.X / 0.5, 0, 1, 0)
+predictionFill.BackgroundColor3 = Color3.fromRGB(255, 180, 80)
 predictionFill.Parent = predictionTrack
 
 local predictionCorner2 = Instance.new("UICorner")
@@ -223,12 +225,6 @@ predictionToggle.Parent = frame
 local predictionToggleCorner = Instance.new("UICorner")
 predictionToggleCorner.CornerRadius = UDim.new(0, 8)
 predictionToggleCorner.Parent = predictionToggle
-
-predictionToggle.MouseButton1Click:Connect(function()
-    predictionEnabled = not predictionEnabled
-    predictionToggle.Text = "PREDICTION: "..(predictionEnabled and "ON" or "OFF")
-    predictionToggle.BackgroundColor3 = predictionEnabled and Color3.fromRGB(50, 80, 60) or Color3.fromRGB(80, 50, 50)
-end)
 
 -- Keybind Control
 local keybindLabel = Instance.new("TextLabel")
@@ -295,7 +291,39 @@ highlight.FillTransparency = 0.8
 highlight.OutlineTransparency = 0.3
 highlight.Parent = gui
 
--- FUNCTIONS
+--// FUNCTIONS
+local function showNotification(message)
+    StarterGui:SetCore("SendNotification", {
+        Title = "SaltyCamlock",
+        Text = message,
+        Duration = 1.5,
+        Button1 = "OK"
+    })
+end
+
+local function toggleGuiVisibility()
+    guiVisible = not guiVisible
+    if guiVisible then
+        showNotification("GUI Shown (RightShift)")
+        frame.Visible = true
+        local tween = TweenService:Create(frame, TweenInfo.new(0.2), {
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(0, 300, 0, 400)
+        })
+        tween:Play()
+    else
+        showNotification("GUI Hidden (RightShift)")
+        local tween = TweenService:Create(frame, TweenInfo.new(0.2), {
+            Position = UDim2.new(0.5, 0, 1.5, 0),
+            Size = UDim2.new(0, 300, 0, 0)
+        })
+        tween:Play()
+        tween.Completed:Connect(function()
+            frame.Visible = false
+        end)
+    end
+end
+
 local function getClosestPlayerToCrosshair()
     local myChar = localPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
@@ -312,7 +340,6 @@ local function getClosestPlayerToCrosshair()
             if hrp then
                 local toPlayer = (hrp.Position - cameraPos).Unit
                 local angle = math.acos(cameraLook:Dot(toPlayer))
-                
                 if angle < smallestAngle then
                     smallestAngle = angle
                     closestPlayer = player
@@ -320,7 +347,6 @@ local function getClosestPlayerToCrosshair()
             end
         end
     end
-    
     return closestPlayer
 end
 
@@ -329,33 +355,26 @@ local function updateStatus()
         statusDot.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
         statusText.Text = "INACTIVE"
     else
-        if targetPlayer then
-            statusDot.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
-            statusText.Text = "LOCKED: "..string.sub(targetPlayer.Name, 1, 12)
-        else
-            statusDot.BackgroundColor3 = Color3.fromRGB(255, 255, 50)
-            statusText.Text = "NO TARGET"
-        end
+        statusDot.BackgroundColor3 = targetPlayer and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 255, 50)
+        statusText.Text = targetPlayer and "LOCKED: "..string.sub(targetPlayer.Name, 1, 12) or "NO TARGET"
     end
 end
 
 local function toggleCamlock()
     camLockEnabled = not camLockEnabled
-    
     if camLockEnabled then
         targetPlayer = getClosestPlayerToCrosshair()
-        highlight.Adornee = targetPlayer and targetPlayer.Character or nil
+        highlight.Adornee = targetPlayer and targetPlayer.Character
         toggleBtn.Text = "CAMLOCK: ON"
     else
         targetPlayer = nil
         highlight.Adornee = nil
         toggleBtn.Text = "CAMLOCK: OFF"
     end
-    
     updateStatus()
 end
 
--- CONNECTIONS
+--// CONNECTIONS
 toggleBtn.MouseButton1Click:Connect(toggleCamlock)
 
 keyBtn.MouseButton1Click:Connect(function()
@@ -363,9 +382,14 @@ keyBtn.MouseButton1Click:Connect(function()
     keyBtn.Text = "PRESS A KEY..."
 end)
 
+predictionToggle.MouseButton1Click:Connect(function()
+    predictionEnabled = not predictionEnabled
+    predictionToggle.Text = "PREDICTION: "..(predictionEnabled and "ON" or "OFF")
+    predictionToggle.BackgroundColor3 = predictionEnabled and Color3.fromRGB(50, 80, 60) or Color3.fromRGB(80, 50, 50)
+end)
+
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
-    
     if waitingForKey and input.KeyCode ~= Enum.KeyCode.Unknown then
         camLockKey = input.KeyCode
         keybindLabel.Text = "KEYBIND: "..camLockKey.Name
@@ -373,20 +397,17 @@ UserInputService.InputBegan:Connect(function(input, gpe)
         waitingForKey = false
     elseif input.KeyCode == camLockKey then
         toggleCamlock()
+    elseif input.KeyCode == hideGuiKey then
+        toggleGuiVisibility()
     end
 end)
 
--- Smoothness slider
+-- Slider Logic
 local sliderDragging = false
-sliderButton.MouseButton1Down:Connect(function()
-    sliderDragging = true
-end)
-
--- Prediction slider
 local predictionDragging = false
-predictionButton.MouseButton1Down:Connect(function()
-    predictionDragging = true
-end)
+
+sliderButton.MouseButton1Down:Connect(function() sliderDragging = true end)
+predictionButton.MouseButton1Down:Connect(function() predictionDragging = true end)
 
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -395,58 +416,46 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Main camlock loop
-local renderSteppedConnection
-renderSteppedConnection = RunService.RenderStepped:Connect(function(deltaTime)
-    -- Handle slider dragging
+-- Main Loop
+local renderSteppedConnection = RunService.RenderStepped:Connect(function(deltaTime)
     if sliderDragging then
         local mouse = UserInputService:GetMouseLocation().X
         local sliderPos = sliderTrack.AbsolutePosition.X
         local sliderSize = sliderTrack.AbsoluteSize.X
         local percent = math.clamp((mouse - sliderPos) / sliderSize, 0, 1)
-        
         smoothness = percent
         sliderFill.Size = UDim2.new(smoothness, 0, 1, 0)
         sliderButton.Position = UDim2.new(smoothness, -8, 0.5, -8)
         smoothLabel.Text = "SMOOTHNESS: "..string.format("%.2f", smoothness)
     end
     
-    -- Handle prediction slider dragging
     if predictionDragging then
         local mouse = UserInputService:GetMouseLocation().X
         local sliderPos = predictionTrack.AbsolutePosition.X
         local sliderSize = predictionTrack.AbsoluteSize.X
         local percent = math.clamp((mouse - sliderPos) / sliderSize, 0, 1)
-        
-        predictionAmount = Vector3.new(percent * 0.5, 0, percent * 0.5) -- Max prediction 0.5
+        predictionAmount = Vector3.new(percent * 0.5, 0, percent * 0.5)
         predictionFill.Size = UDim2.new(percent, 0, 1, 0)
         predictionButton.Position = UDim2.new(percent, -8, 0.5, -8)
         predictionLabel.Text = "PREDICTION: "..string.format("%.2f", predictionAmount.X)
     end
     
-    -- Handle camlock
     if camLockEnabled then
-        -- Get new target if needed
         if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
             targetPlayer = getClosestPlayerToCrosshair()
-            highlight.Adornee = targetPlayer and targetPlayer.Character or nil
+            highlight.Adornee = targetPlayer and targetPlayer.Character
             updateStatus()
         end
         
-        -- Smooth camera movement
         if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local hrp = targetPlayer.Character.HumanoidRootPart
             local predictedPos = predictionEnabled and (hrp.Position + (hrp.Velocity * predictionAmount)) or hrp.Position
             local camPos = camera.CFrame.Position
             local lookDir = (predictedPos - camPos).Unit
-            
-            -- Smooth interpolation
             local currentLook = camera.CFrame.LookVector
             local newLook = currentLook:Lerp(lookDir, smoothness * deltaTime * 60)
-            
             camera.CFrame = CFrame.new(camPos, camPos + newLook)
         else
-            -- Target became invalid
             targetPlayer = nil
             highlight.Adornee = nil
             updateStatus()
@@ -454,9 +463,9 @@ renderSteppedConnection = RunService.RenderStepped:Connect(function(deltaTime)
     end
 end)
 
--- Cleanup
+-- Initialization
+showNotification("SaltyCamlock Loaded - Press RightShift to toggle GUI")
+
 gui.Destroying:Connect(function()
-    if renderSteppedConnection then
-        renderSteppedConnection:Disconnect()
-    end
+    renderSteppedConnection:Disconnect()
 end)
