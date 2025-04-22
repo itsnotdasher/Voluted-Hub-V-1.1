@@ -20,6 +20,7 @@ local maxLockAngle = math.rad(30)
 local predictionEnabled = true
 local guiVisible = true
 local hideGuiKey = Enum.KeyCode.RightShift
+local legitMode = false -- New variable for legit mode
 
 --// GUI SETUP
 local gui = Instance.new("ScreenGui")
@@ -53,7 +54,7 @@ end
 local frame = Instance.new("Frame")
 frame.AnchorPoint = Vector2.new(0.5, 0.5)
 frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-frame.Size = UDim2.new(0, 300, 0, 400)
+frame.Size = UDim2.new(0, 300, 0, 450) -- Increased height for new button
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 frame.BackgroundTransparency = 0.1
 frame.Active = true
@@ -280,10 +281,30 @@ local predictionToggleCorner = Instance.new("UICorner")
 predictionToggleCorner.CornerRadius = UDim.new(0, 8)
 predictionToggleCorner.Parent = predictionToggle
 
+-- Legit Mode Toggle (NEW)
+local legitToggle = Instance.new("TextButton")
+legitToggle.Size = UDim2.new(1, 0, 0, 36)
+legitToggle.Position = UDim2.new(0, 0, 0, 295)
+legitToggle.Text = "LEGIT MODE: OFF"
+legitToggle.Font = Enum.Font.GothamBold
+legitToggle.TextSize = 14
+legitToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+legitToggle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+legitToggle.AutoButtonColor = false
+legitToggle.Parent = frame
+
+-- Add glow to legit toggle
+local legitToggleGlow = createGlowEffect(legitToggle)
+legitToggleGlow.ImageColor3 = Color3.fromRGB(150, 150, 150)
+
+local legitToggleCorner = Instance.new("UICorner")
+legitToggleCorner.CornerRadius = UDim.new(0, 8)
+legitToggleCorner.Parent = legitToggle
+
 -- Keybind Control
 local keybindLabel = Instance.new("TextLabel")
 keybindLabel.Text = "KEYBIND: Q"
-keybindLabel.Position = UDim2.new(0, 0, 0, 295)
+keybindLabel.Position = UDim2.new(0, 0, 0, 340)
 keybindLabel.Size = UDim2.new(1, 0, 0, 20)
 keybindLabel.Font = Enum.Font.GothamBold
 keybindLabel.TextSize = 13
@@ -294,7 +315,7 @@ keybindLabel.Parent = frame
 
 local keyBtn = Instance.new("TextButton")
 keyBtn.Size = UDim2.new(1, 0, 0, 36)
-keyBtn.Position = UDim2.new(0, 0, 0, 320)
+keyBtn.Position = UDim2.new(0, 0, 0, 365)
 keyBtn.Text = "CHANGE KEYBIND"
 keyBtn.Font = Enum.Font.GothamBold
 keyBtn.TextSize = 14
@@ -314,7 +335,7 @@ keyBtnCorner.Parent = keyBtn
 -- Status Indicator
 local statusContainer = Instance.new("Frame")
 statusContainer.Size = UDim2.new(1, 0, 0, 24)
-statusContainer.Position = UDim2.new(0, 0, 0, 365)
+statusContainer.Position = UDim2.new(0, 0, 0, 410)
 statusContainer.BackgroundTransparency = 1
 statusContainer.Parent = frame
 
@@ -385,7 +406,7 @@ local function toggleGuiVisibility()
         frame.Visible = true
         local tween = TweenService:Create(frame, TweenInfo.new(0.2), {
             Position = UDim2.new(0.5, 0, 0.5, 0),
-            Size = UDim2.new(0, 300, 0, 400)
+            Size = UDim2.new(0, 300, 0, 450)
         })
         tween:Play()
     else
@@ -449,7 +470,9 @@ local function toggleCamlock()
     camLockEnabled = not camLockEnabled
     if camLockEnabled then
         targetPlayer = getClosestPlayerToCrosshair()
-        highlight.Adornee = targetPlayer and targetPlayer.Character
+        if not legitMode then
+            highlight.Adornee = targetPlayer and targetPlayer.Character
+        end
         toggleBtn.Text = "CAMLOCK: ON"
         
         -- Pulse effect when toggled on
@@ -503,6 +526,32 @@ predictionToggle.MouseButton1Click:Connect(function()
     pulse:Play()
     pulse.Completed:Connect(function()
         TweenService:Create(predictionToggleGlow, TweenInfo.new(0.3), {
+            ImageColor3 = Color3.fromRGB(150, 150, 150),
+            Size = UDim2.new(1, 24, 1, 24),
+            Position = UDim2.new(0, -12, 0, -12)
+        }):Play()
+    end)
+end)
+
+-- New legit mode toggle connection
+legitToggle.MouseButton1Click:Connect(function()
+    legitMode = not legitMode
+    legitToggle.Text = "LEGIT MODE: "..(legitMode and "ON" or "OFF")
+    
+    -- Update highlight visibility based on legit mode
+    if camLockEnabled and targetPlayer then
+        highlight.Adornee = not legitMode and targetPlayer.Character or nil
+    end
+    
+    -- Pulse effect when toggled
+    local pulse = TweenService:Create(legitToggleGlow, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        ImageColor3 = Color3.fromRGB(255, 255, 255),
+        Size = UDim2.new(1.2, 24, 1.2, 24),
+        Position = UDim2.new(0, -18, 0, -18)
+    })
+    pulse:Play()
+    pulse.Completed:Connect(function()
+        TweenService:Create(legitToggleGlow, TweenInfo.new(0.3), {
             ImageColor3 = Color3.fromRGB(150, 150, 150),
             Size = UDim2.new(1, 24, 1, 24),
             Position = UDim2.new(0, -12, 0, -12)
@@ -572,7 +621,9 @@ local renderSteppedConnection = RunService.RenderStepped:Connect(function(deltaT
     if camLockEnabled then
         if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
             targetPlayer = getClosestPlayerToCrosshair()
-            highlight.Adornee = targetPlayer and targetPlayer.Character
+            if not legitMode then
+                highlight.Adornee = targetPlayer and targetPlayer.Character
+            end
             updateStatus()
         end
         
