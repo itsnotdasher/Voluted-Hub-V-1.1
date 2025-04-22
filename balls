@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
+local Lighting = game:GetService("Lighting")
 
 --// VARIABLES
 local localPlayer = Players.LocalPlayer
@@ -27,24 +28,49 @@ gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.Parent = localPlayer:WaitForChild("PlayerGui")
 
+-- Create glow effect function
+local function createGlowEffect(frame)
+    local glow = Instance.new("ImageLabel")
+    glow.Name = "GlowEffect"
+    glow.Image = "rbxassetid://5028857084" -- Glow texture
+    glow.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    glow.ScaleType = Enum.ScaleType.Slice
+    glow.SliceCenter = Rect.new(24, 24, 24, 24)
+    glow.BackgroundTransparency = 1
+    glow.Size = UDim2.new(1, 24, 1, 24)
+    glow.Position = UDim2.new(0, -12, 0, -12)
+    glow.ZIndex = -1
+    glow.Parent = frame
+    
+    local glowTween = TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+        ImageTransparency = 0.7
+    })
+    glowTween:Play()
+    
+    return glow
+end
+
 local frame = Instance.new("Frame")
 frame.AnchorPoint = Vector2.new(0.5, 0.5)
 frame.Position = UDim2.new(0.5, 0, 0.5, 0)
 frame.Size = UDim2.new(0, 300, 0, 400)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-frame.BackgroundTransparency = 0.2
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BackgroundTransparency = 0.1
 frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
+
+-- Add glow to main frame
+createGlowEffect(frame)
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = frame
 
 local border = Instance.new("UIStroke")
-border.Color = Color3.fromRGB(100, 100, 100)
+border.Color = Color3.fromRGB(255, 255, 255)
 border.Thickness = 1
-border.Transparency = 0.7
+border.Transparency = 0.3
 border.Parent = frame
 
 local padding = Instance.new("UIPadding")
@@ -63,19 +89,33 @@ titleBar.Parent = frame
 local title = Instance.new("TextLabel")
 title.Text = "SALTYNESS HUB [1.0V]"
 title.Size = UDim2.new(1, 0, 1, 0)
-title.Font = Enum.Font.GothamSemibold
+title.Font = Enum.Font.GothamBlack
 title.TextSize = 16
-title.TextColor3 = Color3.fromRGB(240, 240, 240)
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.BackgroundTransparency = 1
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
+
+-- Add glow to title
+local titleGlow = Instance.new("TextLabel")
+titleGlow.Text = title.Text
+titleGlow.Size = title.Size
+titleGlow.Position = title.Position
+titleGlow.Font = title.Font
+titleGlow.TextSize = title.TextSize
+titleGlow.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleGlow.BackgroundTransparency = 1
+titleGlow.TextTransparency = 0.7
+titleGlow.TextXAlignment = title.TextXAlignment
+titleGlow.ZIndex = title.ZIndex - 1
+titleGlow.Parent = title
 
 -- Divider
 local divider = Instance.new("Frame")
 divider.Size = UDim2.new(1, 0, 0, 1)
 divider.Position = UDim2.new(0, 0, 0, 40)
-divider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-divider.BackgroundTransparency = 0.7
+divider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+divider.BackgroundTransparency = 0.5
 divider.Parent = frame
 
 -- Toggle Button
@@ -83,12 +123,16 @@ local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(1, 0, 0, 40)
 toggleBtn.Position = UDim2.new(0, 0, 0, 50)
 toggleBtn.Text = "CAMLOCK: OFF"
-toggleBtn.Font = Enum.Font.GothamMedium
+toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.TextSize = 14
-toggleBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggleBtn.AutoButtonColor = false
 toggleBtn.Parent = frame
+
+-- Add glow effect to toggle button
+local toggleGlow = createGlowEffect(toggleBtn)
+toggleGlow.ImageColor3 = Color3.fromRGB(150, 150, 150)
 
 local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 8)
@@ -99,9 +143,9 @@ local modeLabel = Instance.new("TextLabel")
 modeLabel.Text = "MODE: Custom"
 modeLabel.Position = UDim2.new(0, 0, 0, 100)
 modeLabel.Size = UDim2.new(1, 0, 0, 20)
-modeLabel.Font = Enum.Font.Gotham
+modeLabel.Font = Enum.Font.GothamBold
 modeLabel.TextSize = 13
-modeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+modeLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 modeLabel.BackgroundTransparency = 1
 modeLabel.TextXAlignment = Enum.TextXAlignment.Left
 modeLabel.Parent = frame
@@ -111,9 +155,9 @@ local smoothLabel = Instance.new("TextLabel")
 smoothLabel.Text = "SMOOTHNESS: "..string.format("%.2f", smoothness)
 smoothLabel.Position = UDim2.new(0, 0, 0, 130)
 smoothLabel.Size = UDim2.new(1, 0, 0, 20)
-smoothLabel.Font = Enum.Font.Gotham
+smoothLabel.Font = Enum.Font.GothamBold
 smoothLabel.TextSize = 13
-smoothLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+smoothLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 smoothLabel.BackgroundTransparency = 1
 smoothLabel.TextXAlignment = Enum.TextXAlignment.Left
 smoothLabel.Parent = frame
@@ -128,7 +172,7 @@ local sliderTrack = Instance.new("Frame")
 sliderTrack.Size = UDim2.new(1, 0, 0, 4)
 sliderTrack.Position = UDim2.new(0, 0, 0.5, 0)
 sliderTrack.AnchorPoint = Vector2.new(0, 0.5)
-sliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+sliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 sliderTrack.Parent = sliderContainer
 
 local sliderCorner = Instance.new("UICorner")
@@ -137,7 +181,7 @@ sliderCorner.Parent = sliderTrack
 
 local sliderFill = Instance.new("Frame")
 sliderFill.Size = UDim2.new(smoothness, 0, 1, 0)
-sliderFill.BackgroundColor3 = Color3.fromRGB(80, 180, 255)
+sliderFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 sliderFill.Parent = sliderTrack
 
 local sliderCorner2 = Instance.new("UICorner")
@@ -148,11 +192,14 @@ local sliderButton = Instance.new("TextButton")
 sliderButton.Size = UDim2.new(0, 16, 0, 16)
 sliderButton.Position = UDim2.new(smoothness, -8, 0.5, -8)
 sliderButton.AnchorPoint = Vector2.new(0, 0.5)
-sliderButton.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 sliderButton.Text = ""
 sliderButton.AutoButtonColor = false
 sliderButton.ZIndex = 2
 sliderButton.Parent = sliderContainer
+
+-- Add glow to slider button
+createGlowEffect(sliderButton)
 
 local sliderCorner3 = Instance.new("UICorner")
 sliderCorner3.CornerRadius = UDim.new(1, 0)
@@ -163,9 +210,9 @@ local predictionLabel = Instance.new("TextLabel")
 predictionLabel.Text = "PREDICTION: "..string.format("%.2f", predictionAmount.X)
 predictionLabel.Position = UDim2.new(0, 0, 0, 190)
 predictionLabel.Size = UDim2.new(1, 0, 0, 20)
-predictionLabel.Font = Enum.Font.Gotham
+predictionLabel.Font = Enum.Font.GothamBold
 predictionLabel.TextSize = 13
-predictionLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+predictionLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 predictionLabel.BackgroundTransparency = 1
 predictionLabel.TextXAlignment = Enum.TextXAlignment.Left
 predictionLabel.Parent = frame
@@ -180,7 +227,7 @@ local predictionTrack = Instance.new("Frame")
 predictionTrack.Size = UDim2.new(1, 0, 0, 4)
 predictionTrack.Position = UDim2.new(0, 0, 0.5, 0)
 predictionTrack.AnchorPoint = Vector2.new(0, 0.5)
-predictionTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+predictionTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 predictionTrack.Parent = predictionContainer
 
 local predictionCorner = Instance.new("UICorner")
@@ -189,7 +236,7 @@ predictionCorner.Parent = predictionTrack
 
 local predictionFill = Instance.new("Frame")
 predictionFill.Size = UDim2.new(predictionAmount.X / 0.5, 0, 1, 0)
-predictionFill.BackgroundColor3 = Color3.fromRGB(255, 180, 80)
+predictionFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 predictionFill.Parent = predictionTrack
 
 local predictionCorner2 = Instance.new("UICorner")
@@ -200,11 +247,14 @@ local predictionButton = Instance.new("TextButton")
 predictionButton.Size = UDim2.new(0, 16, 0, 16)
 predictionButton.Position = UDim2.new(predictionAmount.X / 0.5, -8, 0.5, -8)
 predictionButton.AnchorPoint = Vector2.new(0, 0.5)
-predictionButton.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+predictionButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 predictionButton.Text = ""
 predictionButton.AutoButtonColor = false
 predictionButton.ZIndex = 2
 predictionButton.Parent = predictionContainer
+
+-- Add glow to prediction button
+createGlowEffect(predictionButton)
 
 local predictionCorner3 = Instance.new("UICorner")
 predictionCorner3.CornerRadius = UDim.new(1, 0)
@@ -215,12 +265,16 @@ local predictionToggle = Instance.new("TextButton")
 predictionToggle.Size = UDim2.new(1, 0, 0, 36)
 predictionToggle.Position = UDim2.new(0, 0, 0, 250)
 predictionToggle.Text = "PREDICTION: ON"
-predictionToggle.Font = Enum.Font.GothamMedium
+predictionToggle.Font = Enum.Font.GothamBold
 predictionToggle.TextSize = 14
-predictionToggle.TextColor3 = Color3.fromRGB(240, 240, 240)
-predictionToggle.BackgroundColor3 = Color3.fromRGB(50, 80, 60)
+predictionToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+predictionToggle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 predictionToggle.AutoButtonColor = false
 predictionToggle.Parent = frame
+
+-- Add glow to prediction toggle
+local predictionToggleGlow = createGlowEffect(predictionToggle)
+predictionToggleGlow.ImageColor3 = Color3.fromRGB(150, 150, 150)
 
 local predictionToggleCorner = Instance.new("UICorner")
 predictionToggleCorner.CornerRadius = UDim.new(0, 8)
@@ -231,9 +285,9 @@ local keybindLabel = Instance.new("TextLabel")
 keybindLabel.Text = "KEYBIND: Q"
 keybindLabel.Position = UDim2.new(0, 0, 0, 295)
 keybindLabel.Size = UDim2.new(1, 0, 0, 20)
-keybindLabel.Font = Enum.Font.Gotham
+keybindLabel.Font = Enum.Font.GothamBold
 keybindLabel.TextSize = 13
-keybindLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+keybindLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 keybindLabel.BackgroundTransparency = 1
 keybindLabel.TextXAlignment = Enum.TextXAlignment.Left
 keybindLabel.Parent = frame
@@ -242,12 +296,16 @@ local keyBtn = Instance.new("TextButton")
 keyBtn.Size = UDim2.new(1, 0, 0, 36)
 keyBtn.Position = UDim2.new(0, 0, 0, 320)
 keyBtn.Text = "CHANGE KEYBIND"
-keyBtn.Font = Enum.Font.GothamMedium
+keyBtn.Font = Enum.Font.GothamBold
 keyBtn.TextSize = 14
-keyBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
-keyBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+keyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+keyBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 keyBtn.AutoButtonColor = false
 keyBtn.Parent = frame
+
+-- Add glow to key button
+local keyBtnGlow = createGlowEffect(keyBtn)
+keyBtnGlow.ImageColor3 = Color3.fromRGB(150, 150, 150)
 
 local keyBtnCorner = Instance.new("UICorner")
 keyBtnCorner.CornerRadius = UDim.new(0, 8)
@@ -267,6 +325,25 @@ statusDot.AnchorPoint = Vector2.new(0, 0.5)
 statusDot.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 statusDot.Parent = statusContainer
 
+-- Add pulsing glow to status dot
+local statusGlow = Instance.new("ImageLabel")
+statusGlow.Name = "StatusGlow"
+statusGlow.Image = "rbxassetid://5028857084"
+statusGlow.ImageColor3 = Color3.fromRGB(255, 50, 50)
+statusGlow.ScaleType = Enum.ScaleType.Slice
+statusGlow.SliceCenter = Rect.new(24, 24, 24, 24)
+statusGlow.BackgroundTransparency = 1
+statusGlow.Size = UDim2.new(2, 0, 2, 0)
+statusGlow.Position = UDim2.new(-0.5, 0, -0.5, 0)
+statusGlow.ZIndex = -1
+statusGlow.Parent = statusDot
+
+local glowTween = TweenService:Create(statusGlow, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+    ImageTransparency = 0.5,
+    Size = UDim2.new(2.5, 0, 2.5, 0)
+})
+glowTween:Play()
+
 local statusCorner = Instance.new("UICorner")
 statusCorner.CornerRadius = UDim.new(1, 0)
 statusCorner.Parent = statusDot
@@ -275,9 +352,9 @@ local statusText = Instance.new("TextLabel")
 statusText.Text = "INACTIVE"
 statusText.Size = UDim2.new(1, -20, 1, 0)
 statusText.Position = UDim2.new(0, 20, 0, 0)
-statusText.Font = Enum.Font.Gotham
+statusText.Font = Enum.Font.GothamBold
 statusText.TextSize = 13
-statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusText.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusText.BackgroundTransparency = 1
 statusText.TextXAlignment = Enum.TextXAlignment.Left
 statusText.Parent = statusContainer
@@ -285,7 +362,7 @@ statusText.Parent = statusContainer
 -- Highlight
 local highlight = Instance.new("Highlight")
 highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-highlight.FillColor = Color3.fromRGB(100, 150, 255)
+highlight.FillColor = Color3.fromRGB(255, 255, 255)
 highlight.OutlineColor = Color3.new(0, 0, 0)
 highlight.FillTransparency = 0.8
 highlight.OutlineTransparency = 0.3
@@ -353,10 +430,18 @@ end
 local function updateStatus()
     if not camLockEnabled then
         statusDot.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        statusGlow.ImageColor3 = Color3.fromRGB(255, 50, 50)
         statusText.Text = "INACTIVE"
     else
-        statusDot.BackgroundColor3 = targetPlayer and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 255, 50)
-        statusText.Text = targetPlayer and "LOCKED: "..string.sub(targetPlayer.Name, 1, 12) or "NO TARGET"
+        if targetPlayer then
+            statusDot.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+            statusGlow.ImageColor3 = Color3.fromRGB(50, 255, 50)
+            statusText.Text = "LOCKED: "..string.sub(targetPlayer.Name, 1, 12)
+        else
+            statusDot.BackgroundColor3 = Color3.fromRGB(255, 255, 50)
+            statusGlow.ImageColor3 = Color3.fromRGB(255, 255, 50)
+            statusText.Text = "NO TARGET"
+        end
     end
 end
 
@@ -366,6 +451,21 @@ local function toggleCamlock()
         targetPlayer = getClosestPlayerToCrosshair()
         highlight.Adornee = targetPlayer and targetPlayer.Character
         toggleBtn.Text = "CAMLOCK: ON"
+        
+        -- Pulse effect when toggled on
+        local pulse = TweenService:Create(toggleGlow, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            ImageColor3 = Color3.fromRGB(255, 255, 255),
+            Size = UDim2.new(1.2, 24, 1.2, 24),
+            Position = UDim2.new(0, -18, 0, -18)
+        })
+        pulse:Play()
+        pulse.Completed:Connect(function()
+            TweenService:Create(toggleGlow, TweenInfo.new(0.3), {
+                ImageColor3 = Color3.fromRGB(150, 150, 150),
+                Size = UDim2.new(1, 24, 1, 24),
+                Position = UDim2.new(0, -12, 0, -12)
+            }):Play()
+        end)
     else
         targetPlayer = nil
         highlight.Adornee = nil
@@ -380,12 +480,34 @@ toggleBtn.MouseButton1Click:Connect(toggleCamlock)
 keyBtn.MouseButton1Click:Connect(function()
     waitingForKey = true
     keyBtn.Text = "PRESS A KEY..."
+    
+    -- Pulse effect when waiting for key
+    local pulse = TweenService:Create(keyBtnGlow, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, -1), {
+        ImageColor3 = Color3.fromRGB(255, 255, 255),
+        Size = UDim2.new(1.2, 24, 1.2, 24),
+        Position = UDim2.new(0, -18, 0, -18)
+    })
+    pulse:Play()
 end)
 
 predictionToggle.MouseButton1Click:Connect(function()
     predictionEnabled = not predictionEnabled
     predictionToggle.Text = "PREDICTION: "..(predictionEnabled and "ON" or "OFF")
-    predictionToggle.BackgroundColor3 = predictionEnabled and Color3.fromRGB(50, 80, 60) or Color3.fromRGB(80, 50, 50)
+    
+    -- Pulse effect when toggled
+    local pulse = TweenService:Create(predictionToggleGlow, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        ImageColor3 = Color3.fromRGB(255, 255, 255),
+        Size = UDim2.new(1.2, 24, 1.2, 24),
+        Position = UDim2.new(0, -18, 0, -18)
+    })
+    pulse:Play()
+    pulse.Completed:Connect(function()
+        TweenService:Create(predictionToggleGlow, TweenInfo.new(0.3), {
+            ImageColor3 = Color3.fromRGB(150, 150, 150),
+            Size = UDim2.new(1, 24, 1, 24),
+            Position = UDim2.new(0, -12, 0, -12)
+        }):Play()
+    end)
 end)
 
 UserInputService.InputBegan:Connect(function(input, gpe)
@@ -395,6 +517,13 @@ UserInputService.InputBegan:Connect(function(input, gpe)
         keybindLabel.Text = "KEYBIND: "..camLockKey.Name
         keyBtn.Text = "CHANGE KEYBIND"
         waitingForKey = false
+        
+        -- Stop pulsing when key is set
+        keyBtnGlow.ImageColor3 = Color3.fromRGB(150, 150, 150)
+        TweenService:Create(keyBtnGlow, TweenInfo.new(0.3), {
+            Size = UDim2.new(1, 24, 1, 24),
+            Position = UDim2.new(0, -12, 0, -12)
+        }):Play()
     elseif input.KeyCode == camLockKey then
         toggleCamlock()
     elseif input.KeyCode == hideGuiKey then
